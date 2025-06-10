@@ -1,0 +1,81 @@
+---
+title: "Fst_tutorial"
+output: html_document
+date: "2023-07-01"
+---
+
+
+# Calculating Fst for the Black Death populations
+
+## 1. Set up
+Make sure `vcftools` is installed and added to the PATH;
+install and load packages;
+locate your working directory.
+
+```{r set up}
+## Add vcftools to your PATH
+Sys.setenv(PATH=paste(Sys.getenv("PATH"), "/Users/osipova/local/Homebrew/bin/", sep=":"))
+
+## Install and load packages
+#install.packages("stringr")
+library(stringr)
+
+## Locate your work dir
+setwd('/Users/osipova/Documents/LabDocs/TA_human_PopGen/Fst_tutorial/')
+```
+
+## 2. Prepare input and run vcftools
+Now we want to calculate window-based Fst for the samples from the Black Death study.
+I prepared a subsample of variants of *chr5* from the paper and put them in `popgenome-vcf/sampled.chr5.blackDeath.vcf` file. In addition, I prepared two files listing the samples in each population: `before.lst` and `after.lst`
+To run `vcftools`, we also need to define the window size and the output file prefix.
+
+```{r vcftools}
+## Load VCF input
+VCF <- 'popgenome-vcf/sampled.chr5.blackDeath.vcf'
+WINDOW = 10000
+OUT_PREFIX <- 'before_vs_after_Fst_10kb'
+
+## compute window based Fst
+system(str_c('vcftools',
+             ' --vcf ', VCF,
+             ' --weir-fst-pop before.lst ',
+             ' --weir-fst-pop after.lst ',
+             ' --fst-window-size ', WINDOW,
+             ' --out ', OUT_PREFIX))
+```
+
+## 3. Results
+Let's check out the output! Load the table in R and check the beginning if the table.
+```{r check output}
+## Load vcftools output
+fst <- read.table(paste0(OUT_PREFIX, '.windowed.weir.fst'), header = TRUE)
+head(fst)
+```
+
+## 4. Plot Fst
+Let's now visualize the results. We will plot Fst values across the entire chr5.
+
+```{r visualize}
+## Assign colors and size based on significance
+fst$COLOR <- with(fst, ifelse(WEIGHTED_FST > 0.6, 'red', 'black'))
+fst$SIZE <- with(fst, ifelse(WEIGHTED_FST > 0.6, 19, 20))
+
+## Plot
+par(mfrow=c(1,1))
+plot(fst$BIN_START,
+     fst$WEIGHTED_FST,
+     pch = fst$SIZE,
+     col = fst$COLOR,
+     ylim = c(0, 1),
+     xlab = 'position',
+     ylab = 'Fst',
+     frame.plot = FALSE,
+     main = 'before vs after the Black Death')
+```
+
+What are the regions having high Fst values?
+We can have a look at the positions with:
+```{r}
+fst[fst$WEIGHTED_FST > 0.6, ]
+```
+
