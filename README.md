@@ -9,8 +9,8 @@
  
  ## 3. [Fst](https://htmlpreview.github.io/?https://github.com/osipovarev/BIO-S_140_human_PopGen/blob/main/Fst_tutorial/Fst_tutorial.html)
 
-	- see helpful [slides](https://github.com/osipovarev/BIO-S_140_human_PopGen/blob/main/2023.07.05_genetic_drift.Fst.admixture.pptx) explaining the theory on the three subjects above
+- see helpful [slides](https://github.com/osipovarev/BIO-S_140_human_PopGen/blob/main/2023.07.05_genetic_drift.Fst.admixture.pptx) explaining the theory on the three subjects above
 
  ## 4. [Phylogenetic analyis](https://github.com/osipovarev/BIO-S_140_human_PopGen/tree/main/Phylogenetic_tutorial)
 
- 	- see helpful [slides](https://github.com/osipovarev/BIO-S_140_human_PopGen/blob/main/2023.07.19_bio-s140.phylogenetic_analysis.pptx) explaining the theory on Phylogenetic analysis
+- see helpful [slides](https://github.com/osipovarev/BIO-S_140_human_PopGen/blob/main/2023.07.19_bio-s140.phylogenetic_analysis.pptx) explaining the theory on Phylogenetic analysis
