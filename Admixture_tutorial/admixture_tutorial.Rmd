@@ -1,0 +1,175 @@
+---
+title: "Admixture"
+output:
+  pdf_document: default
+  html_document: default
+date: "2023-07-01"
+---
+
+This tutorial uses a publicly available dataset from the Human HapMap project (release 23, full dataset). We will use the data in PLINK format from https://zzz.bwh.harvard.edu/plink/res.shtml. This is a big dataset of 270 individuals genotyped at 3.96 million SNPs! What a time to be alive, right?
+
+
+
+## 1. Downloading the software/programs
+We only need two programs: **ADMIXTURE** and **PLINK**. Obviously, ADMIXTURE does the admixture analysis, while we will use PLINK to wrangle the large dataset into a more tractable for the scope of this tutorial (time and computational constraints).
+
+### For Windows/PC
+Sadly, ADMIXTURE is not available for Windows/PC, so folks on that operating system will have to login to the Harvard Cannon cluster (then use the Linux options below).
+
+### For Linux
+To download ADMIXUTRE for Linux, type or copy the following into the command line:
+```
+wget https://dalexander.github.io/admixture/binaries/admixture_linux-1.3.0.tar.gz
+```
+Unpack the tar ball:
+```
+tar -xvf admixture_linux-1.3.0.tar.gz --strip-components=1
+```
+Move the executable to the current directory:
+```
+mv admixture_linux-1.3.0/admixture .
+```
+To download PLINK for Linux, type or copy the following into the command line:
+```
+wget https://s3.amazonaws.com/plink1-assets/plink_linux_x86_64_20230116.zip
+```
+Unzip the file
+```
+unzip plink_linux_x86_64_20230116.zip -d plink
+```
+### For Mac
+To download ADMIXUTRE for Mac, type or copy the following into the command line:
+```
+curl -O https://dalexander.github.io/admixture/binaries/admixture_macosx-1.3.0.tar.gz
+```
+Unpack the tar ball:
+```
+tar -xvf admixture_macosx-1.3.0.tar.gz --strip-components=1
+```
+Move the executable to the current directory:
+```
+mv dist/admixture_macosx-1.3.0/admixture .
+```
+To download PLINK for Mac, type or copy the following into the command line:
+```
+curl -O https://s3.amazonaws.com/plink1-assets/plink_mac_20230116.zip
+```
+Unzip the file
+```
+unzip plink_mac_20230116.zip -d plink
+```
+
+
+
+## 2. Downloading the data
+The data can be downloaded directly from the command line. Type or copy the following into the command line:
+on Linux:
+```
+wget https://zzz.bwh.harvard.edu/plink/dist/hapmap_r23a.zip
+```
+on Mac:
+```
+curl -O https://zzz.bwh.harvard.edu/plink/dist/hapmap_r23a.zip
+```
+Unzip the data:
+```
+unzip hapmap_r23a.zip
+```
+
+
+## 3. Downsampling the data
+This is a huge dataset (~4 million SNPs), so lets randomly downsample SNPs to produce a dataset that you can analyze in a few minutes on your laptop. Let’s take a random subsample of 10,000 SNPs as a start. We will use the program PLINK to do this. Type the following at the command line:
+```
+plink/plink --bfile hapmap_r23a --thin-count 10000 --make-bed --out hapmap_r23_subset
+```
+If you want to try a larger (or smaller) random subsample, just change the number after the `--thin-count` flag. Pretty easy, right?
+
+
+## 4. Run analysis
+Now the fun part! To run ADMIXTURE, we need to give the program only two things: 
+1) the SNP data (your downsampled .bed file created with PLINK) and 
+2) a number of ancestral populations (k) to estimate ancestry proportions for.
+ 
+Let's go to RStudio now.
+```{r set up}
+## Locate ADMIXTURE binary and the working dir
+setwd('/Users/osipova/Documents/LabDocs/TA_human_PopGen/Admixture_tutorial/')
+ADMIXTURE <- '/Users/osipova/Documents/LabDocs/TA_human_PopGen/software/admixture_macosx-1.3.0/admixture '
+```
+
+```{r run test admixture}
+knitr::opts_chunk$set(eval = FALSE, eval=FALSE)
+k <- 2
+system(paste0(ADMIXTURE, 
+              'hapmap_r23_subset.bed ',
+              k))
+```
+
+
+This runs the ADMIXTURE program assuming 5 ancestral populations (k) and will only take about one minute (for ~10,000 SNPs, but will be longer for larger numbers of SNPs). Really we want to explore various values of k. To assess what the best value of k is, you can have ADMIXTURE conduct cross-validation by simply adding the `--cv` flag to the above command.
+
+```{r run test admixture --cv, eval=FALSE}
+knitr::opts_chunk$set(eval = FALSE)
+k <- 2
+system(paste0(ADMIXTURE, 
+              '--cv ',
+              'hapmap_r23_subset.bed ',
+              k))
+```
+
+Building on this, we can write a for loop to run the analysis on multiple values of k (1-5) like so:
+```{r run, eval=FALSE }
+knitr::opts_chunk$set(eval = FALSE)
+## run Admixture for k = 1,2,3,4,5
+## store log in a file
+for (k in 1:5){
+  system(paste0(ADMIXTURE,
+                '--cv ',
+                'hapmap_r23_subset.bed ',
+                k,
+                ' > ', k, '.log'))
+}
+```
+
+## 5. Examine and plot results
+Load Admixture output
+``` {r load output}
+runs <- list()
+
+for (k in 1:5){
+  runs[[k]] <- read.table(paste0("hapmap_r23_subset.", k, ".Q"))
+}
+```
+
+Plot runs for all values of k
+```{r plot results}
+par(mar=c(4,4,4,1)+.1)
+par(mfrow = c(4, 1))
+
+for (k in 2:5){
+  barplot(t(as.matrix(runs[[k]])),
+          col = rainbow(k),
+          xlab = paste0('k = ', k),
+          ylab = "Ancestry",
+          cex.lab=2,
+          border=NA)
+}
+```
+
+
+
+### Cross-validation Results
+To view the cross-validation results for each value of k, just type this into the command line:
+```
+grep  CV *log
+```
+What we see is:
+```
+1.log:CV error (K=1): 0.43520
+2.log:CV error (K=2): 0.38074
+3.log:CV error (K=3): 0.35638
+4.log:CV error (K=4): 0.36005
+5.log:CV error (K=5): 0.36178
+```
+From which we can see that the cross-validation estimate is lowest for k=3, suggesting that is a reasonable choice for the value of k. Further analysis, perhaps with a larger number of SNPs could thus focus only on a model where k=3.
+
